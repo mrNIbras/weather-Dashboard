@@ -46,8 +46,49 @@ app.get('/api/weather', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(baseURL, { params });
-    res.json(response.data);
+    // Step 1: Get current weather data
+    const currentWeatherResponse = await axios.get(baseURL, { params });
+    const currentData = currentWeatherResponse.data;
+
+    // Step 2: Use coordinates from the current weather response to get the 5-day forecast
+    const forecastURL = 'https://api.openweathermap.org/data/2.5/forecast';
+    const forecastParams = {
+      lat: currentData.coord.lat,
+      lon: currentData.coord.lon,
+      appid: apiKey,
+      units: 'metric',
+    };
+    const forecastResponse = await axios.get(forecastURL, { params: forecastParams });
+    const forecastData = forecastResponse.data;
+
+    // Step 3: Process the 3-hour forecast list to create a daily summary
+    const dailyData = {};
+    forecastData.list.forEach(item => {
+      const date = item.dt_txt.split(' ')[0];
+      if (!dailyData[date]) {
+        dailyData[date] = { temps: [], weather: [] };
+      }
+      dailyData[date].temps.push(item.main.temp);
+      dailyData[date].weather.push(item.weather[0]);
+    });
+
+    const dailySummary = Object.keys(dailyData).map(date => {
+      const day = dailyData[date];
+      return {
+        dt: new Date(date).getTime() / 1000,
+        temp: { min: Math.min(...day.temps), max: Math.max(...day.temps) },
+        weather: day.weather[Math.floor(day.weather.length / 2)], // Get weather from midday
+      };
+    });
+
+    // Step 4: Combine current weather with hourly and daily forecasts
+    const combinedData = {
+      ...currentData, // All current weather data
+      hourly: forecastData.list, // The 3-hour forecast list
+      daily: dailySummary, // The processed daily summary
+    };
+
+    res.json(combinedData);
   } catch (error) {
     const status = error.response?.status || 500;
     const message = error.response?.data?.message || 'Failed to fetch weather data.';
