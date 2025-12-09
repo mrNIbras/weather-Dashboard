@@ -9,17 +9,7 @@ const app = express();
 
 // --- Middleware ---
 // Security headers
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        "script-src": ["'self'", "'unsafe-inline'"],
-        "style-src": ["'self'", "'unsafe-inline'"],
-      },
-    },
-  })
-);
+app.use(helmet({ crossOriginEmbedderPolicy: false, contentSecurityPolicy: false }));
 
 // In a unified app, CORS is less critical for production if the origin is the same.
 // However, it's still useful for development when the frontend dev server
@@ -43,11 +33,17 @@ app.get('/api/weather', async (req, res) => {
     return res.status(400).json({ message: 'City or coordinates must be provided.' });
   }
 
-  // Using OpenWeatherMap API as an example. Adjust if you use a different service.
+  // Reverting to OpenWeatherMap 2.5 API as One Call 3.0 requires a separate subscription.
+  // The 2.5 API can take city name or coordinates directly.
   const baseURL = 'https://api.openweathermap.org/data/2.5/weather';
-  const params = city
-    ? { q: city, appid: apiKey, units: 'metric' }
-    : { lat, lon, appid: apiKey, units: 'metric' };
+  let params = { appid: apiKey, units: 'metric' };
+
+  if (city) {
+    params.q = city;
+  } else {
+    params.lat = lat;
+    params.lon = lon;
+  }
 
   try {
     const response = await axios.get(baseURL, { params });

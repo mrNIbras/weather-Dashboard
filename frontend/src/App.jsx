@@ -137,9 +137,12 @@ function App() {
             </div>
           )}
 
-          {weatherData && !loading && !error && (
+          {/* Render CurrentWeather if data is available */}
+          {weatherData && !loading && !error && <CurrentWeather data={weatherData} />}
+
+          {/* Conditionally render Forecast only if hourly and daily data exist (not available in OWM 2.5) */}
+          {weatherData && weatherData.hourly && weatherData.daily && !loading && !error && (
             <div className="mt-8 grid grid-cols-1 gap-8 animate-fade-in">
-              <CurrentWeather data={weatherData} />
               <Forecast
                 hourly={weatherData.hourly}
                 daily={weatherData.daily}
