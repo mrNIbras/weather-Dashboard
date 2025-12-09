@@ -9,7 +9,16 @@ const app = express();
 
 // --- Middleware ---
 // Security headers
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "script-src": ["'self'"],
+      },
+    },
+  })
+);
 
 // In a unified app, CORS is less critical for production if the origin is the same.
 // However, it's still useful for development when the frontend dev server
