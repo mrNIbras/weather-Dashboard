@@ -1,3 +1,4 @@
+/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -15,3 +16,4 @@ body {
     animation: fade-in 0.5s ease-out forwards;
   }
 }
+/* stylelint-enable at-rule-no-unknown */
