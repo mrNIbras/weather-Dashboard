@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
 require('dotenv').config();
+const axios = require('axios');
 
 const app = express();
 
@@ -20,10 +21,33 @@ app.use(express.json());
 
 // --- API Routes ---
 // It's a good practice to prefix your API routes to avoid conflicts.
-app.get('/api/weather', (req, res) => {
-  // Your existing weather API logic would go here.
-  // For example, fetching from another service with axios.
-  res.json({ temp: '75F', condition: 'Sunny' });
+app.get('/api/weather', async (req, res) => {
+  const { city, lat, lon } = req.query;
+  const apiKey = process.env.WEATHER_API_KEY;
+
+  if (!apiKey) {
+    return res.status(500).json({ message: 'Weather API key is not configured on the server.' });
+  }
+
+  if (!city && !(lat && lon)) {
+    return res.status(400).json({ message: 'City or coordinates must be provided.' });
+  }
+
+  // Using OpenWeatherMap API as an example. Adjust if you use a different service.
+  const baseURL = 'https://api.openweathermap.org/data/2.5/weather';
+  const params = city
+    ? { q: city, appid: apiKey, units: 'metric' }
+    : { lat, lon, appid: apiKey, units: 'metric' };
+
+  try {
+    const response = await axios.get(baseURL, { params });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching from weather API:', error.response?.data || error.message);
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.message || 'Failed to fetch weather data.';
+    res.status(status).json({ message });
+  }
 });
 
 // --- Static File Serving ---
@@ -33,7 +57,9 @@ app.use(express.static(path.join(__dirname, '../frontend/dist')));
 // --- Catch-all Route ---
 // This route handles any requests that don't match the ones above.
 // It sends back the main index.html file, allowing client-side routing to take over.
-app.get('*', (req, res) => {
+// We use a regular expression to match any path that wasn't already handled.
+// This is a robust way to implement a catch-all for client-side routing.
+app.get(/^(?!\/api).*/, (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });
 

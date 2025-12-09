@@ -1,67 +1,40 @@
-import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:3001/api';
+// The base path for all API calls. In our unified setup, this is a relative path.
+const API_BASE_URL = '/api';
 
 /**
- * Fetches weather data for a given city.
- * It first gets the coordinates for the city and then fetches the weather.
- * @param {string} city - The name of the city.
- * @returns {Promise<object>} - The weather data from the 'onecall' API.
+ * A helper function to handle fetch responses and errors.
+ * @param {Response} response - The response object from a fetch call.
+ * @returns {Promise<any>} - The JSON data from the response.
+ * @throws {Error} - Throws an error if the network response is not ok.
  */
-export const getWeatherDataByCity = async (city) => {
-  try {
-    // 1. Get coordinates for the city
-    const geoResponse = await axios.get(`${API_BASE_URL}/geocode`, {
-      params: { city },
-    });
-
-    if (!geoResponse.data) {
-      throw new Error('City not found.');
-    }
-
-    const { lat, lon, name, country } = geoResponse.data;
-
-    // 2. Get weather data using coordinates
-    const weatherResponse = await axios.get(`${API_BASE_URL}/weather`, {
-      params: { lat, lon },
-    });
-
-    // Combine location name with weather data for easier use in the UI
-    return { ...weatherResponse.data, name, country };
-  } catch (error) {
-    console.error('Error in weather service:', error);
-    // Re-throw the error to be handled by the component
+const handleResponse = async (response) => {
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred.' }));
+    const error = new Error(errorData.message || 'Failed to fetch data from the server.');
+    // Mimic the error structure that the App.jsx component expects
+    error.response = { data: errorData };
     throw error;
   }
+  return response.json();
 };
 
 /**
- * Fetches weather data for given coordinates.
+ * Fetches weather data for a specific city.
+ * @param {string} city - The name of the city.
+ * @returns {Promise<any>} - The weather data.
+ */
+export const getWeatherDataByCity = async (city) => {
+  const response = await fetch(`${API_BASE_URL}/weather?city=${encodeURIComponent(city)}`);
+  return handleResponse(response);
+};
+
+/**
+ * Fetches weather data using geographic coordinates.
  * @param {number} lat - The latitude.
  * @param {number} lon - The longitude.
- * @returns {Promise<object>} - The weather data combined with the location name.
+ * @returns {Promise<any>} - The weather data.
  */
 export const getWeatherDataByCoords = async (lat, lon) => {
-  try {
-    // 1. Get location name from coordinates
-    const geoResponse = await axios.get(`${API_BASE_URL}/reverse-geocode`, {
-      params: { lat, lon },
-    });
-
-    if (!geoResponse.data) {
-      throw new Error('Location not found.');
-    }
-
-    const { name, country } = geoResponse.data;
-
-    // 2. Get weather data using coordinates
-    const weatherResponse = await axios.get(`${API_BASE_URL}/weather`, {
-      params: { lat, lon },
-    });
-
-    return { ...weatherResponse.data, name, country };
-  } catch (error) {
-    console.error('Error in coordinate weather service:', error);
-    throw error;
-  }
+  const response = await fetch(`${API_BASE_URL}/weather?lat=${lat}&lon=${lon}`);
+  return handleResponse(response);
 };
