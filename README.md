@@ -2,7 +2,7 @@
 
 A clean, modern, and responsive weather dashboard application that provides real-time weather information for any city in the world. It also includes hourly and 5-day forecasts.
 
-## ✨ Features
+##  Features
 
 - **City Search**: Find weather information for any city.
 - **Geolocation**: Automatically fetch weather for your current location with one click.
@@ -11,7 +11,7 @@ A clean, modern, and responsive weather dashboard application that provides real
 - **Dynamic Background**: The UI background changes based on the current weather conditions and time of day.
 - **Responsive Design**: Looks great on desktop, tablets, and mobile devices.
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - **Frontend**: React, Vite, Tailwind CSS
 - **Backend**: Node.js, Express.js
